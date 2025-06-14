@@ -11,7 +11,7 @@
 // utilizes two instances of llama_kv_cache_unified
 //   the first instance is for the non-SWA layers of the model and the second instance is for the SWA layers
 
-class llama_kv_cache_unified_iswa : public llama_kv_cache {
+class llama_kv_cache_unified_iswa : public llama_memory_i {
 public:
     llama_kv_cache_unified_iswa(
             const llama_model & model,
@@ -31,7 +31,18 @@ public:
     // llama_memory_i
     //
 
-    void clear() override;
+    llama_memory_state_ptr init_batch(
+            const llama_batch & batch,
+            uint32_t n_ubatch,
+            bool embd_pooled) override;
+
+    llama_memory_state_ptr init_full() override;
+
+    llama_memory_state_ptr init_update(llama_context * lctx, bool optimize) override;
+
+    bool get_can_shift() const override;
+
+    void clear(bool data) override;
 
     bool seq_rm  (llama_seq_id seq_id,                              llama_pos p0, llama_pos p1) override;
     void seq_cp  (llama_seq_id seq_id_src, llama_seq_id seq_id_dst, llama_pos p0, llama_pos p1) override;
@@ -41,22 +52,6 @@ public:
 
     llama_pos seq_pos_min(llama_seq_id seq_id) const override;
     llama_pos seq_pos_max(llama_seq_id seq_id) const override;
-
-    //
-    // llama_kv_cache
-    //
-
-    llama_memory_state_ptr init_batch(
-            const llama_batch & batch,
-            uint32_t n_ubatch,
-            bool embd_pooled,
-            bool logits_all) override;
-
-    llama_memory_state_ptr init_full() override;
-
-    llama_memory_state_ptr init_update(llama_context * lctx, bool optimize) override;
-
-    bool get_can_shift() const override;
 
     // state write/load
 
